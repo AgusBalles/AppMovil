@@ -1,4 +1,4 @@
-package com.huerto.app.ui.login
+package com.example.huerto.ui.login
 
 import android.app.Application
 import android.os.Build
@@ -36,9 +36,9 @@ import com.example.huerto.ui.login.LoginViewModel
 
 @Composable
 fun LoginScreen(
-    onLoginSuccess: () -> Unit
+    onLoginSuccess: () -> Unit,
+    onNavigateToRegister: () -> Unit
 ) {
-    // ✅ Crear el VM con un Factory que recibe Application
     val app = LocalContext.current.applicationContext as Application
     val vm: LoginViewModel = viewModel(factory = LoginVMFactory(app))
 
@@ -49,12 +49,9 @@ fun LoginScreen(
 
     fun buzz() {
         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
             vibrator?.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
-        } else {
-            @Suppress("DEPRECATION")
-            vibrator?.vibrate(50)
-        }
+        else @Suppress("DEPRECATION") vibrator?.vibrate(50)
     }
 
     Surface(Modifier.fillMaxSize()) {
@@ -126,7 +123,8 @@ fun LoginScreen(
                         Text(it, color = MaterialTheme.colorScheme.error)
                     }
 
-                    TextButton(onClick = { /* TODO: Ir a registro si lo agregas */ }) {
+                    // 👇 ESTE es el botón que ves. Ahora sí navega.
+                    TextButton(onClick = { onNavigateToRegister() }) {
                         Text("¿No tienes cuenta? Regístrate")
                     }
                 }
@@ -135,10 +133,6 @@ fun LoginScreen(
     }
 }
 
-/**
- * ✅ Factory correcto: NO usa LocalContext aquí.
- * Recibe Application desde el @Composable y crea el Repo + UserPrefs.
- */
 class LoginVMFactory(private val app: Application) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         val repo = SessionRepository(UserPrefs(app))
