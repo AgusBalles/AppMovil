@@ -1,36 +1,23 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 package com.example.huerto.ui.register
 
-
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.material3.ExperimentalMaterial3Api
-
-
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Button
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.MaterialTheme
-
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun RegisterScreen(
     onRegistered: (email: String) -> Unit,
     onBack: () -> Unit
 ) {
-    var email by remember { mutableStateOf("") }
-    var pass by remember { mutableStateOf("") }
-    var pass2 by remember { mutableStateOf("") }
-    var errorMsg by remember { mutableStateOf<String?>(null) }
+    val vm: RegisterViewModel = viewModel()
+    val ui by vm.ui.collectAsState()
 
     Scaffold(
         topBar = {
@@ -38,10 +25,7 @@ fun RegisterScreen(
                 title = { Text("Crear cuenta") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.Filled.ArrowBack,
-                            contentDescription = "Atrás"
-                        )
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "Volver atrás")
                     }
                 }
             )
@@ -53,51 +37,56 @@ fun RegisterScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // Campos de formulario
             OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
+                value = ui.email,
+                onValueChange = vm::onEmail,
                 label = { Text("Correo electrónico") },
                 modifier = Modifier.fillMaxWidth()
             )
 
             OutlinedTextField(
-                value = pass,
-                onValueChange = { pass = it },
+                value = ui.name,
+                onValueChange = vm::onName,
+                label = { Text("Nombre completo") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            OutlinedTextField(
+                value = ui.pass,
+                onValueChange = vm::onPass,
                 label = { Text("Contraseña") },
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth()
             )
 
             OutlinedTextField(
-                value = pass2,
-                onValueChange = { pass2 = it },
+                value = ui.pass2,
+                onValueChange = vm::onPass2,
                 label = { Text("Repite contraseña") },
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // Mensaje de error
-            errorMsg?.let {
+            ui.error?.let {
                 Text(it, color = MaterialTheme.colorScheme.error)
             }
 
+            // Botón principal de registro
             Button(
-                onClick = {
-                    when {
-                        email.isBlank() || pass.isBlank() || pass2.isBlank() ->
-                            errorMsg = "Completa todos los campos"
-                        pass != pass2 ->
-                            errorMsg = "Las contraseñas no coinciden"
-                        else -> {
-                            errorMsg = null
-                            onRegistered(email)
-                        }
-                    }
-                },
+                onClick = { vm.submit(onRegistered) },
+                enabled = ui.canSubmit && !ui.isLoading,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Registrarme")
+                if (ui.isLoading) {
+                    CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Creando cuenta…")
+                } else {
+                    Text("Registrarme")
+                }
             }
+
         }
     }
 }

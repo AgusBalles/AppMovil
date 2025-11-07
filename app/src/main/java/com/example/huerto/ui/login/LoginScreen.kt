@@ -61,7 +61,7 @@ fun LoginScreen(
                     Modifier.padding(20.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text("🌿 Bienvenido a Huerto", style = MaterialTheme.typography.headlineSmall)
+                    Text("🌿 Bienvenido a Huerto Hogar", style = MaterialTheme.typography.headlineSmall)
                     Text("Inicia sesión para continuar", style = MaterialTheme.typography.bodyMedium)
 
                     OutlinedTextField(
@@ -135,7 +135,7 @@ fun LoginScreen(
 
 class LoginVMFactory(private val app: Application) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        val repo = SessionRepository(UserPrefs(app))
-        return LoginViewModel(repo) as T
+        return LoginViewModel(app) as T
     }
 }
+

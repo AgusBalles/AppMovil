@@ -1,8 +1,11 @@
 package com.example.huerto.ui.login
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.huerto.data.local.UserPrefs
 import com.example.huerto.data.repository.SessionRepository
+import com.example.huerto.data.repository.UserRepository
 import com.example.huerto.domain.validation.Validators
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,35 +22,32 @@ data class LoginUiState(
     val loginError: String? = null
 )
 
-class LoginViewModel(private val repo: SessionRepository) : ViewModel() {
+class LoginViewModel(app: Application) : AndroidViewModel(app) {
+    private val userRepo = UserRepository(app)
+    private val sessionRepo = SessionRepository(UserPrefs(app))
 
     private val _ui = MutableStateFlow(LoginUiState())
     val ui: StateFlow<LoginUiState> = _ui
 
-    fun onEmailChange(v: String) = update { it.copy(email = v) }.validate()
-    fun onPasswordChange(v: String) = update { it.copy(password = v) }.validate()
+    fun onEmailChange(v: String) { _ui.value = _ui.value.copy(email = v); validate() }
+    fun onPasswordChange(v: String) { _ui.value = _ui.value.copy(password = v); validate() }
 
-    private fun update(block: (LoginUiState) -> LoginUiState): LoginViewModel {
-        _ui.value = block(_ui.value)
-        return this
-    }
-
-    private fun validate(): LoginViewModel {
+    private fun validate() {
         val s = _ui.value
         val e = Validators.emailErrorOrNull(s.email)
         val p = Validators.passwordErrorOrNull(s.password)
         _ui.value = s.copy(emailError = e, passwordError = p, canSubmit = e == null && p == null)
-        return this
     }
 
     fun login(onSuccess: () -> Unit) = viewModelScope.launch {
-        val s = _ui.value
         validate()
         if (!_ui.value.canSubmit) return@launch
         _ui.value = _ui.value.copy(isLoading = true, loginError = null)
-        delay(800)
-        if (s.email.lowercase().startsWith("huerto") && s.password == "123456") {
-            repo.login(s.email, "Usuario Huerto")
+        delay(300)
+        val s = _ui.value
+        val user = userRepo.login(s.email.trim(), s.password)
+        if (user != null) {
+            sessionRepo.login(user.email, user.name)
             _ui.value = _ui.value.copy(isLoading = false)
             onSuccess()
         } else {
