@@ -1,19 +1,18 @@
 package com.example.huerto.ui.product
 
 
+
 import android.app.Application
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.huerto.data.local.db.entities.ProductEntity
@@ -28,16 +27,19 @@ fun ProductosTab(
     val app = LocalContext.current.applicationContext as Application
     val repo = remember { ProductRepository(app) }
 
+    // Asegura que haya productos base (semilla)
     LaunchedEffect(Unit) { repo.seedIfEmpty() }
 
     val productos by repo.observeAll().collectAsState(initial = emptyList())
 
-    // Carrito
+    // ViewModel del carrito
     val cartVm: CartViewModel = viewModel(factory = CartViewModel.provideFactory(app))
     val cartUi by cartVm.ui.collectAsState()
-    val qtyByProduct = remember(cartUi.items) { cartUi.items.associate { it.productId to it.quantity } }
+    val qtyByProduct = remember(cartUi.items) {
+        cartUi.items.associate { it.productId to it.quantity }
+    }
 
-    // Dialogo para agregar productos
+    // Variables para el diálogo "Agregar producto"
     var showAdd by remember { mutableStateOf(false) }
     var name by remember { mutableStateOf("") }
     var price by remember { mutableStateOf("") }
@@ -50,7 +52,7 @@ fun ProductosTab(
                 ExtendedFloatingActionButton(
                     onClick = onGoCart,
                     icon = { Icon(Icons.Filled.ShoppingCart, null) },
-                    text = { Text("Ir al carrito (${cartUi.count})  ·  $${cartUi.total}") }
+                    text = { Text("Ir al carrito (${cartUi.count}) · $${cartUi.total}") }
                 )
             }
         },
@@ -63,10 +65,13 @@ fun ProductosTab(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text("🛒 Productos", style = MaterialTheme.typography.titleLarge)
+            Text("🛒 Catálogo de Productos", style = MaterialTheme.typography.titleLarge)
 
             // Botón central para agregar nuevos productos
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+            ) {
                 Button(onClick = { showAdd = true }) { Text("Agregar productos") }
             }
 
@@ -86,8 +91,11 @@ fun ProductosTab(
                                     .padding(12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                ProductImagePlaceholder()
+                                // 👇 Usa el nuevo ProductImage (sin try/catch)
+                                ProductImage(name = p.name)
+
                                 Spacer(Modifier.width(12.dp))
+
                                 Column(Modifier.weight(1f)) {
                                     Text(p.name, style = MaterialTheme.typography.titleMedium)
                                     Text("$${p.price}", style = MaterialTheme.typography.bodyMedium)
@@ -97,6 +105,7 @@ fun ProductosTab(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
+
                                 val qty = qtyByProduct[p.id] ?: 0
                                 QuantityControl(
                                     quantity = qty,
@@ -111,16 +120,28 @@ fun ProductosTab(
         }
     }
 
-    // Diálogo para crear producto
+    // Diálogo para crear nuevo producto
     if (showAdd) {
         AlertDialog(
             onDismissRequest = { showAdd = false },
             title = { Text("Agregar producto") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Nombre") })
-                    OutlinedTextField(value = price, onValueChange = { price = it.filter { c -> c.isDigit() } }, label = { Text("Precio") })
-                    OutlinedTextField(value = stock, onValueChange = { stock = it.filter { c -> c.isDigit() } }, label = { Text("Stock") })
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text("Nombre") }
+                    )
+                    OutlinedTextField(
+                        value = price,
+                        onValueChange = { price = it.filter { c -> c.isDigit() } },
+                        label = { Text("Precio") }
+                    )
+                    OutlinedTextField(
+                        value = stock,
+                        onValueChange = { stock = it.filter { c -> c.isDigit() } },
+                        label = { Text("Stock") }
+                    )
                 }
             },
             confirmButton = {
@@ -142,13 +163,14 @@ fun ProductosTab(
                     }
                 ) { Text("Guardar") }
             },
-            dismissButton = { TextButton(onClick = { showAdd = false }) { Text("Cancelar") } }
+            dismissButton = {
+                TextButton(onClick = { showAdd = false }) { Text("Cancelar") }
+            }
         )
     }
 }
 
-/* --------- Helpers --------- */
-
+/* --------- Controles de cantidad --------- */
 @Composable
 private fun QuantityControl(
     quantity: Int,
@@ -161,14 +183,5 @@ private fun QuantityControl(
         Text("$quantity", style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.width(10.dp))
         Button(onClick = onPlus) { Text("+") }
-    }
-}
-
-@Composable
-private fun ProductImagePlaceholder(size: Dp = 64.dp) {
-    Card(modifier = Modifier.size(size), shape = MaterialTheme.shapes.medium) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Icon(Icons.Default.Image, contentDescription = "imagen", modifier = Modifier.size(size * 0.6f))
-        }
     }
 }
