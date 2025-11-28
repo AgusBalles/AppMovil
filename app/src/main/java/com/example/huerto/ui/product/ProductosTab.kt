@@ -1,7 +1,5 @@
 package com.example.huerto.ui.product
 
-
-
 import android.app.Application
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -150,7 +148,7 @@ fun ProductosTab(
                     enabled = enabled,
                     onClick = {
                         scope.launch {
-                            repo.insertAll(
+                            repo.createProduct(
                                 ProductEntity(
                                     name = name.trim(),
                                     price = price.toInt(),

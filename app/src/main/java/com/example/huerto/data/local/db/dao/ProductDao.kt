@@ -1,5 +1,4 @@
 package com.example.huerto.data.local.db.dao
-
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -9,24 +8,19 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ProductDao {
-
-    // Lista reactiva de productos ordenados por nombre
-    @Query("SELECT * FROM products ORDER BY name ASC")
+    @Query("SELECT * FROM products")
     fun observeAll(): Flow<List<ProductEntity>>
 
-    // Cantidad total de productos (para saber si hay que seedear)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(items: List<ProductEntity>)
+
     @Query("SELECT COUNT(*) FROM products")
     suspend fun count(): Int
 
-    // Insertar una lista (usado por seedIfEmpty)
-    @Insert(onConflict = OnConflictStrategy.ABORT)
-    suspend fun insertAll(list: List<ProductEntity>)
-
-    // (Opcional) upsert individual por si lo necesitas
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(item: ProductEntity)
-
-    // (Opcional) borrar todo (útil en pruebas)
+    // AGREGAR ESTOS DOS MÉTODOS
     @Query("DELETE FROM products")
-    suspend fun clear()
+    suspend fun deleteAll()
+
+    @Query("DELETE FROM products WHERE id = :id")
+    suspend fun deleteById(id: Long)
 }

@@ -1,21 +1,16 @@
 package com.example.huerto.ui.nosotros
 
-
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.model.CameraPosition
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.LatLngBounds
+import androidx.compose.ui.unit.dp
 import com.google.maps.android.compose.*
-import kotlinx.coroutines.delay
+import com.google.android.gms.maps.model.*
 
 @Composable
 fun NosotrosMapScreen() {
-    // Tiendas
+
     val stores = remember {
         listOf(
             "Santiago" to LatLng(-33.4489, -70.6693),
@@ -28,49 +23,28 @@ fun NosotrosMapScreen() {
         )
     }
 
-    // Estado de cámara: vista inicial neutra
-    val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(LatLng(-35.6751, -71.5430), 4.5f)
+    // ⭐ CAMBIAMOS EL ZOOM INICIAL (bug fix para Maps Compose)
+    val initialPosition = LatLng(-35.0, -71.0)
+    val cameraState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(initialPosition, 7.2f)
     }
 
-    // Marcamos cuando el mapa terminó de cargar sus tiles/engine
-    var mapLoaded by remember { mutableStateOf(false) }
+    Column(Modifier.fillMaxSize()) {
+        Text(
+            "Nuestras Tiendas",
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(16.dp)
+        )
 
-    // 🔒 Encadre SEGURO: se ejecuta una sola vez cuando el mapa está listo
-    LaunchedEffect(mapLoaded) {
-        if (mapLoaded && stores.isNotEmpty()) {
-            try {
-                delay(50)
-                val b = LatLngBounds.Builder()
-                stores.forEach { (_, p) -> b.include(p) }
-                val bounds = b.build()
-                val update = CameraUpdateFactory.newLatLngBounds(bounds,120)
-                cameraPositionState.move(update)
-            } catch (t: Throwable) {
-                t.printStackTrace()
-
-            }
-        }
-    }
-
-    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
-            cameraPositionState = cameraPositionState,
-            uiSettings = MapUiSettings(
-                zoomControlsEnabled = true,
-                compassEnabled = true,
-                myLocationButtonEnabled = false
-            ),
-            properties = MapProperties(mapType = MapType.NORMAL),
-            onMapLoaded = { mapLoaded = true }
+            cameraPositionState = cameraState
         ) {
-            // Marcadores
-            stores.forEach { (name, latLng) ->
+            stores.forEach { (name, coords) ->
                 Marker(
-                    state = MarkerState(position = latLng),
+                    state = MarkerState(coords),
                     title = name,
-                    snippet = "Tienda Huerto en $name"
+                    snippet = "Sucursal de Huerto"
                 )
             }
         }
